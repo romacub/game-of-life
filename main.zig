@@ -22,24 +22,39 @@ fn Field(comptime width: usize, comptime height: usize) type {
             self.cells[y][x] = value;
         }
 
-        pub fn print(self: *const Self) void {
-            printBorder(self);
+        fn append(buffer: []u8, len: *usize, text: []const u8) void {
+            @memcpy(buffer[len.* .. len.* + text.len], text);
+            len.* += text.len;
+        }
+
+        pub fn print(self: *const Self, init: std.process.Init) !void {
+            var buffer: [8192]u8 = undefined;
+            var len: usize = 0;
+
+            append(&buffer, &len, "\x1b[H");
+
+            self.printBorder(&buffer, &len);
 
             for (self.cells) |row| {
-                std.debug.print("|", .{});
-                for (row) |cell| std.debug.print("{s}", .{if (cell) "██" else "  "});
-                std.debug.print("|\n", .{});
+                append(&buffer, &len, "|");
+                for (row) |cell| {
+                    append(&buffer, &len, if (cell) "██" else "  ");
+                }
+                append(&buffer, &len, "|\n");
             }
 
-            printBorder(self);
+            self.printBorder(&buffer, &len);
+
+            try std.Io.File.stdout().writeStreamingAll(init.io, buffer[0..len]);
         }
 
-        fn printBorder(_: *const Self) void {
-            std.debug.print("+", .{});
-            for (0..width) |_| std.debug.print("--", .{});
-            std.debug.print("+\n", .{});
+        fn printBorder(_: *const Self, buffer: []u8, len: *usize) void {
+            append(buffer, len, "+");
+            for (0..width) |_| {
+                append(buffer, len, "--");
+            }
+            append(buffer, len, "+\n");
         }
-
         fn countNbors(self: *const Self, x: usize, y: usize) u8 {
             var result: u8 = 0;
             const x_start = if (x == 0) 0 else x - 1;
@@ -132,10 +147,9 @@ pub fn main(init: std.process.Init) !void {
     field.set(12, 8, true);
     field.set(13, 8, true);
 
-
     for (0..10000) |_| {
         field.clearScreen();
-        field.print();
+        try field.print(init);
         field.next();
         try init.io.sleep(.fromMilliseconds(40), .awake);
     }
