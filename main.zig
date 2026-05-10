@@ -31,8 +31,6 @@ fn Field(comptime width: usize, comptime height: usize) type {
             var buffer: [8192]u8 = undefined;
             var len: usize = 0;
 
-            append(&buffer, &len, "\x1b[H");
-
             self.printBorder(&buffer, &len);
 
             for (self.cells) |row| {
