@@ -148,7 +148,10 @@ pub fn main(init: std.process.Init) !void {
     var ALIVE_CHAR: []const u8 = "█";
     var DEAD_CHAR: []const u8 = " ";
     while (args_index < args.len) {
-        if (std.mem.eql(u8, args[args_index], "--steps")) {
+        if (std.mem.eql(u8, args[args_index], "--help")) {
+            usage(args[0]);
+            return;
+        } else if (std.mem.eql(u8, args[args_index], "--steps")) {
             if (args.len == args_index) {
                 usage(args[0]);
                 std.debug.panic("expected an unsigned int value for --steps option, got EOF", .{});
