@@ -27,7 +27,7 @@ fn Field(comptime width: usize, comptime height: usize) type {
             len.* += text.len;
         }
 
-        pub fn print(self: *const Self, init: std.process.Init) !void {
+        pub fn print(self: *const Self, init: std.process.Init, alive_char: []const u8, dead_char: []const u8) !void {
             var buffer: [8192]u8 = undefined;
             var len: usize = 0;
 
@@ -38,7 +38,8 @@ fn Field(comptime width: usize, comptime height: usize) type {
             for (self.cells) |row| {
                 append(&buffer, &len, "|");
                 for (row) |cell| {
-                    append(&buffer, &len, if (cell) "██" else "  ");
+                    append(&buffer, &len, if (cell) alive_char else dead_char);
+                    append(&buffer, &len, if (cell) alive_char else dead_char);
                 }
                 append(&buffer, &len, "|\n");
             }
@@ -107,7 +108,94 @@ fn Field(comptime width: usize, comptime height: usize) type {
     };
 }
 
+fn usage(programm_name: [:0]const u8) void {
+    std.debug.print(
+        \\<name> <mode> [options]
+        \\
+        \\Usage:
+        \\  {s} --help                  print this message
+        \\  {s} run                     run simulation with default settings
+        \\  {s} run --steps N           specify the amount of steps simulation will last
+        \\  {s} run --delay MS          specify the period of time that will be awaited after each step
+        \\  {s} run --alive-cell CHAR   specify what char will be printed to display alive cell
+        \\  {s} run --dead-cell CHAR    specify what char will be printed to display dead cell
+        \\
+        \\Example:
+        \\  {s} run --steps 1000 --delay 40
+        \\
+    , .{ programm_name, programm_name, programm_name, programm_name, programm_name, programm_name, programm_name });
+}
+
 pub fn main(init: std.process.Init) !void {
+    const args = try init.minimal.args.toSlice(init.arena.allocator());
+
+    // parse edge cases
+    if (args.len == 1 or std.mem.eql(u8, args[1], "--help")) {
+        usage(args[0]);
+        return;
+    }
+
+    // parse mode
+    if (!std.mem.eql(u8, args[1], "run")) {
+        usage(args[0]);
+        std.debug.panic("Expected mode, found '{s}'", .{args[1]});
+    } // only run mode is available for now
+
+    // parse options
+    var args_index: u8 = 2;
+    var STEPS: u64 = 10000;
+    var DELAY: i64 = 40;
+    var ALIVE_CHAR: []const u8 = "█";
+    var DEAD_CHAR: []const u8 = " ";
+    while (args_index < args.len) {
+        if (std.mem.eql(u8, args[args_index], "--steps")) {
+            if (args.len == args_index) {
+                usage(args[0]);
+                std.debug.panic("expected an unsigned int value for --steps option, got EOF", .{});
+            }
+
+            args_index += 1;
+
+            STEPS = std.fmt.parseInt(u64, args[args_index], 10) catch |err| {
+                usage(args[0]);
+                std.debug.panic("expected a unsigned int value for --steps option, got '{s}': {}", .{ args[args_index], err });
+            };
+        } else if (std.mem.eql(u8, args[args_index], "--delay")) {
+            if (args.len == args_index) {
+                usage(args[0]);
+                std.debug.panic("expected an int value for --delay option, got EOF", .{});
+            }
+
+            args_index += 1;
+
+            DELAY = std.fmt.parseInt(i64, args[args_index], 10) catch |err| {
+                usage(args[0]);
+                std.debug.panic("expected a int value for --delay option, got '{s}': {}", .{ args[args_index], err });
+            };
+        } else if (std.mem.eql(u8, args[args_index], "--alive-cell")) {
+            if (args.len == args_index) {
+                usage(args[0]);
+                std.debug.panic("expected an unsigned int value for --alive-cell option, got EOF", .{});
+            }
+            args_index += 1;
+            ALIVE_CHAR = args[args_index];
+        } else if (std.mem.eql(u8, args[args_index], "--dead-cell")) {
+            if (args.len == args_index) {
+                usage(args[0]);
+                std.debug.panic("expected an unsigned int value for --dead-cell option, got EOF", .{});
+            }
+            args_index += 1;
+            DEAD_CHAR = args[args_index];
+        } else {
+            if (args_index == args.len) {
+                break;
+            }
+            std.debug.panic("unknown argument: '{s}'", .{args[args_index]});
+        }
+
+        args_index += 1;
+    }
+
     var field = Field(44, 30).empty();
 
     field.set(24, 0, true);
@@ -147,10 +235,10 @@ pub fn main(init: std.process.Init) !void {
     field.set(12, 8, true);
     field.set(13, 8, true);
 
-    for (0..10000) |_| {
+    for (0..STEPS) |_| {
         field.clearScreen();
-        try field.print(init);
+        try field.print(init, ALIVE_CHAR, DEAD_CHAR);
         field.next();
-        try init.io.sleep(.fromMilliseconds(40), .awake);
+        try init.io.sleep(.fromMilliseconds(DELAY), .awake);
     }
 }
