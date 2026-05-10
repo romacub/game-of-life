@@ -152,7 +152,7 @@ pub fn main(init: std.process.Init) !void {
             usage(args[0]);
             return;
         } else if (std.mem.eql(u8, args[args_index], "--steps")) {
-            if (args.len == args_index) {
+            if (args.len == args_index + 1) {
                 usage(args[0]);
                 std.debug.panic("expected an int value (>= -1) for --steps option, got EOF", .{});
             }
@@ -166,7 +166,7 @@ pub fn main(init: std.process.Init) !void {
                 std.debug.panic("expected an int value (>= -1) for --steps option, got '{s}'", .{args[args_index]});
             }
         } else if (std.mem.eql(u8, args[args_index], "--delay")) {
-            if (args.len == args_index) {
+            if (args.len == args_index + 1) {
                 usage(args[0]);
                 std.debug.panic("expected an int value (>= 0) for --delay option, got EOF", .{});
             }
@@ -180,14 +180,14 @@ pub fn main(init: std.process.Init) !void {
                 std.debug.panic("expected an int value (>= 0) for --delay option, got '{s}'", .{args[args_index]});
             }
         } else if (std.mem.eql(u8, args[args_index], "--alive-cell")) {
-            if (args.len == args_index) {
+            if (args.len == args_index + 1) {
                 usage(args[0]);
                 std.debug.panic("expected an unsigned int value for --alive-cell option, got EOF", .{});
             }
             args_index += 1;
             ALIVE_CHAR = args[args_index];
         } else if (std.mem.eql(u8, args[args_index], "--dead-cell")) {
-            if (args.len == args_index) {
+            if (args.len == args_index + 1) {
                 usage(args[0]);
                 std.debug.panic("expected an unsigned int value for --dead-cell option, got EOF", .{});
             }
