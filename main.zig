@@ -126,6 +126,14 @@ fn usage(programm_name: [:0]const u8) void {
     , .{ programm_name, programm_name, programm_name, programm_name, programm_name, programm_name, programm_name });
 }
 
+fn fail(program_name: [:0]const u8, comptime fmt: []const u8, args: anytype) noreturn {
+    std.debug.print("Error: ", .{});
+    std.debug.print(fmt, args);
+    std.debug.print("\n\n", .{});
+    usage(program_name);
+    std.process.exit(1);
+}
+
 pub fn main(init: std.process.Init) !void {
     const args = try init.minimal.args.toSlice(init.arena.allocator());
 
@@ -137,8 +145,7 @@ pub fn main(init: std.process.Init) !void {
 
     // parse mode
     if (!std.mem.eql(u8, args[1], "run")) {
-        usage(args[0]);
-        std.debug.panic("Expected mode, found '{s}'", .{args[1]});
+        fail(args[0], "Expected mode, found '{s}'", .{args[1]});
     } // only run mode is available for now
 
     // parse options
@@ -153,43 +160,35 @@ pub fn main(init: std.process.Init) !void {
             return;
         } else if (std.mem.eql(u8, args[args_index], "--steps")) {
             if (args.len == args_index + 1) {
-                usage(args[0]);
-                std.debug.panic("expected an int value (>= -1) for --steps option, got EOF", .{});
+                fail(args[0], "expected an int value (>= -1) for --steps option, got EOF", .{});
             }
             args_index += 1;
             STEPS = std.fmt.parseInt(i64, args[args_index], 10) catch |err| {
-                usage(args[0]);
-                std.debug.panic("expected an int value (>= -1) for --steps option, got '{s}': {}", .{ args[args_index], err });
+                fail(args[0], "expected an int value (>= -1) for --steps option, got '{s}': {}", .{ args[args_index], err });
             };
             if (STEPS < -1) {
-                usage(args[0]);
-                std.debug.panic("expected an int value (>= -1) for --steps option, got '{s}'", .{args[args_index]});
+                fail(args[0], "expected an int value (>= -1) for --steps option, got '{s}'", .{args[args_index]});
             }
         } else if (std.mem.eql(u8, args[args_index], "--delay")) {
             if (args.len == args_index + 1) {
-                usage(args[0]);
-                std.debug.panic("expected an int value (>= 0) for --delay option, got EOF", .{});
+                fail(args[0], "expected an int value (>= 0) for --delay option, got EOF", .{});
             }
             args_index += 1;
             DELAY = std.fmt.parseInt(i64, args[args_index], 10) catch |err| {
-                usage(args[0]);
-                std.debug.panic("expected an int value (>= 0) for --delay option, got '{s}': {}", .{ args[args_index], err });
+                fail(args[0], "expected an int value (>= 0) for --delay option, got '{s}': {}", .{ args[args_index], err });
             };
             if (DELAY < 0) {
-                usage(args[0]);
-                std.debug.panic("expected an int value (>= 0) for --delay option, got '{s}'", .{args[args_index]});
+                fail(args[0], "expected an int value (>= 0) for --delay option, got '{s}'", .{args[args_index]});
             }
         } else if (std.mem.eql(u8, args[args_index], "--alive-cell")) {
             if (args.len == args_index + 1) {
-                usage(args[0]);
-                std.debug.panic("expected an unsigned int value for --alive-cell option, got EOF", .{});
+                fail(args[0], "expected an unsigned int value for --alive-cell option, got EOF", .{});
             }
             args_index += 1;
             ALIVE_CHAR = args[args_index];
         } else if (std.mem.eql(u8, args[args_index], "--dead-cell")) {
             if (args.len == args_index + 1) {
-                usage(args[0]);
-                std.debug.panic("expected an unsigned int value for --dead-cell option, got EOF", .{});
+                fail(args[0], "expected an unsigned int value for --dead-cell option, got EOF", .{});
             }
             args_index += 1;
             DEAD_CHAR = args[args_index];
@@ -197,7 +196,7 @@ pub fn main(init: std.process.Init) !void {
             if (args_index == args.len) {
                 break;
             }
-            std.debug.panic("unknown argument: '{s}'", .{args[args_index]});
+            fail(args[0], "unknown argument: '{s}'", .{args[args_index]});
         }
 
         args_index += 1;
