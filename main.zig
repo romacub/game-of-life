@@ -22,7 +22,11 @@ fn Field(comptime width: usize, comptime height: usize) type {
             self.cells[y][x] = value;
         }
 
-        fn append(buffer: []u8, len: *usize, text: []const u8) void {
+        fn append(buffer: []u8, len: *usize, text: []const u8) !void {
+            if (len.* + text.len > buffer.len) {
+                return error.BufferTooSmall;
+            }
+
             @memcpy(buffer[len.* .. len.* + text.len], text);
             len.* += text.len;
         }
@@ -31,29 +35,30 @@ fn Field(comptime width: usize, comptime height: usize) type {
             var buffer: [8192]u8 = undefined;
             var len: usize = 0;
 
-            self.printBorder(&buffer, &len);
+            try self.printBorder(&buffer, &len);
 
             for (self.cells) |row| {
-                append(&buffer, &len, "|");
+                try append(&buffer, &len, "|");
                 for (row) |cell| {
-                    append(&buffer, &len, if (cell) alive_char else dead_char);
-                    append(&buffer, &len, if (cell) alive_char else dead_char);
+                    try append(&buffer, &len, if (cell) alive_char else dead_char);
+                    try append(&buffer, &len, if (cell) alive_char else dead_char);
                 }
-                append(&buffer, &len, "|\n");
+                try append(&buffer, &len, "|\n");
             }
 
-            self.printBorder(&buffer, &len);
+            try self.printBorder(&buffer, &len);
 
             try std.Io.File.stdout().writeStreamingAll(init.io, buffer[0..len]);
         }
 
-        fn printBorder(_: *const Self, buffer: []u8, len: *usize) void {
-            append(buffer, len, "+");
+        fn printBorder(_: *const Self, buffer: []u8, len: *usize) !void {
+            try append(buffer, len, "+");
             for (0..width) |_| {
-                append(buffer, len, "--");
+                try append(buffer, len, "--");
             }
-            append(buffer, len, "+\n");
+            try append(buffer, len, "+\n");
         }
+
         fn countNbors(self: *const Self, x: usize, y: usize) u8 {
             var result: u8 = 0;
             const x_start = if (x == 0) 0 else x - 1;
@@ -241,7 +246,9 @@ pub fn main(init: std.process.Init) !void {
 
     while (STEPS != 0) {
         field.clearScreen();
-        try field.print(init, ALIVE_CHAR, DEAD_CHAR);
+        field.print(init, ALIVE_CHAR, DEAD_CHAR) catch |err| {
+            fail(args[0], "failed to render frame: {}", .{err});
+        };
         field.next();
         try init.io.sleep(.fromMilliseconds(DELAY), .awake);
         STEPS -= 1;
