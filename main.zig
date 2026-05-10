@@ -31,7 +31,7 @@ fn Field(comptime width: usize, comptime height: usize) type {
             len.* += text.len;
         }
 
-        pub fn print(self: *const Self, init: std.process.Init, alive_char: []const u8, dead_char: []const u8) !void {
+        pub fn print(self: *const Self, init: std.process.Init, alive_str: []const u8, dead_str: []const u8) !void {
             var buffer: [8192]u8 = undefined;
             var len: usize = 0;
 
@@ -40,7 +40,7 @@ fn Field(comptime width: usize, comptime height: usize) type {
             for (self.cells) |row| {
                 try append(&buffer, &len, "|");
                 for (row) |cell| {
-                    try append(&buffer, &len, if (cell) alive_char else dead_char);
+                    try append(&buffer, &len, if (cell) alive_str else dead_str);
                 }
                 try append(&buffer, &len, "|\n");
             }
@@ -119,8 +119,8 @@ fn usage(programm_name: [:0]const u8) void {
         \\  {s} run                     run simulation with default settings
         \\  {s} run --steps N           specify the amount of steps simulation will last. set -1 for simulation to be endless
         \\  {s} run --delay MS          specify the period of time that will be awaited after each step
-        \\  {s} run --alive-cell CHAR   specify what string will be printed to display alive cell
-        \\  {s} run --dead-cell CHAR    specify what string will be printed to display dead cell
+        \\  {s} run --alive-cell STR   specify what string will be printed to display alive cell
+        \\  {s} run --dead-cell STR    specify what string will be printed to display dead cell
         \\
         \\Example:
         \\  {s} run --steps 1000 --delay 40
@@ -154,8 +154,8 @@ pub fn main(init: std.process.Init) !void {
     var args_index: u8 = 2;
     var STEPS: i64 = -1;
     var DELAY: i64 = 40;
-    var ALIVE_CHAR: []const u8 = "██";
-    var DEAD_CHAR: []const u8 = "  ";
+    var ALIVE_STR: []const u8 = "██";
+    var DEAD_STR: []const u8 = "  ";
     while (args_index < args.len) {
         if (std.mem.eql(u8, args[args_index], "--help")) {
             usage(args[0]);
@@ -187,13 +187,13 @@ pub fn main(init: std.process.Init) !void {
                 fail(args[0], "expected an unsigned int value for --alive-cell option, got EOF", .{});
             }
             args_index += 1;
-            ALIVE_CHAR = args[args_index];
+            ALIVE_STR = args[args_index];
         } else if (std.mem.eql(u8, args[args_index], "--dead-cell")) {
             if (args.len == args_index + 1) {
                 fail(args[0], "expected an unsigned int value for --dead-cell option, got EOF", .{});
             }
             args_index += 1;
-            DEAD_CHAR = args[args_index];
+            DEAD_STR = args[args_index];
         } else {
             if (args_index == args.len) {
                 break;
@@ -245,7 +245,7 @@ pub fn main(init: std.process.Init) !void {
 
     while (STEPS != 0) {
         field.clearScreen();
-        field.print(init, ALIVE_CHAR, DEAD_CHAR) catch |err| {
+        field.print(init, ALIVE_STR, DEAD_STR) catch |err| {
             fail(args[0], "failed to render frame: {}", .{err});
         };
         field.next();
