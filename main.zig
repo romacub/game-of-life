@@ -168,13 +168,17 @@ pub fn main(init: std.process.Init) !void {
         } else if (std.mem.eql(u8, args[args_index], "--delay")) {
             if (args.len == args_index) {
                 usage(args[0]);
-                std.debug.panic("expected an int value for --delay option, got EOF", .{});
+                std.debug.panic("expected an int value (>= 0) for --delay option, got EOF", .{});
             }
             args_index += 1;
             DELAY = std.fmt.parseInt(i64, args[args_index], 10) catch |err| {
                 usage(args[0]);
-                std.debug.panic("expected an int value for --delay option, got '{s}': {}", .{ args[args_index], err });
+                std.debug.panic("expected an int value (>= 0) for --delay option, got '{s}': {}", .{ args[args_index], err });
             };
+            if (DELAY < 0) {
+                usage(args[0]);
+                std.debug.panic("expected an int value (>= 0) for --delay option, got '{s}'", .{args[args_index]});
+            }
         } else if (std.mem.eql(u8, args[args_index], "--alive-cell")) {
             if (args.len == args_index) {
                 usage(args[0]);
