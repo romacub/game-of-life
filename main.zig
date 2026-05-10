@@ -41,7 +41,6 @@ fn Field(comptime width: usize, comptime height: usize) type {
                 try append(&buffer, &len, "|");
                 for (row) |cell| {
                     try append(&buffer, &len, if (cell) alive_char else dead_char);
-                    try append(&buffer, &len, if (cell) alive_char else dead_char);
                 }
                 try append(&buffer, &len, "|\n");
             }
@@ -120,8 +119,8 @@ fn usage(programm_name: [:0]const u8) void {
         \\  {s} run                     run simulation with default settings
         \\  {s} run --steps N           specify the amount of steps simulation will last. set -1 for simulation to be endless
         \\  {s} run --delay MS          specify the period of time that will be awaited after each step
-        \\  {s} run --alive-cell CHAR   specify what char will be printed to display alive cell
-        \\  {s} run --dead-cell CHAR    specify what char will be printed to display dead cell
+        \\  {s} run --alive-cell CHAR   specify what string will be printed to display alive cell
+        \\  {s} run --dead-cell CHAR    specify what string will be printed to display dead cell
         \\
         \\Example:
         \\  {s} run --steps 1000 --delay 40
@@ -155,8 +154,8 @@ pub fn main(init: std.process.Init) !void {
     var args_index: u8 = 2;
     var STEPS: i64 = -1;
     var DELAY: i64 = 40;
-    var ALIVE_CHAR: []const u8 = "█";
-    var DEAD_CHAR: []const u8 = " ";
+    var ALIVE_CHAR: []const u8 = "██";
+    var DEAD_CHAR: []const u8 = "  ";
     while (args_index < args.len) {
         if (std.mem.eql(u8, args[args_index], "--help")) {
             usage(args[0]);
