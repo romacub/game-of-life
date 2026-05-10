@@ -17,6 +17,8 @@ Currently the only available mode is: `run`.
 
 Currently the field is hardcoded.
 
+Note that if something strange is happening on yuor screen, it may be that encoding is messed up, and symbol representing an alive cell is missprinted, which is common across Windows systems. In taht case you can specify another symbol to be representing an alive cell using `--alive-cell` option.
+
 ## Options
 
 - `--help`
