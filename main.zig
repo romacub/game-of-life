@@ -115,7 +115,7 @@ fn usage(programm_name: [:0]const u8) void {
         \\Usage:
         \\  {s} --help                  print this message
         \\  {s} run                     run simulation with default settings
-        \\  {s} run --steps N           specify the amount of steps simulation will last
+        \\  {s} run --steps N           specify the amount of steps simulation will last. set -1 for simulation to be endless
         \\  {s} run --delay MS          specify the period of time that will be awaited after each step
         \\  {s} run --alive-cell CHAR   specify what char will be printed to display alive cell
         \\  {s} run --dead-cell CHAR    specify what char will be printed to display dead cell
@@ -143,7 +143,7 @@ pub fn main(init: std.process.Init) !void {
 
     // parse options
     var args_index: u8 = 2;
-    var STEPS: u64 = 10000;
+    var STEPS: i64 = -1;
     var DELAY: i64 = 40;
     var ALIVE_CHAR: []const u8 = "█";
     var DEAD_CHAR: []const u8 = " ";
@@ -154,26 +154,26 @@ pub fn main(init: std.process.Init) !void {
         } else if (std.mem.eql(u8, args[args_index], "--steps")) {
             if (args.len == args_index) {
                 usage(args[0]);
-                std.debug.panic("expected an unsigned int value for --steps option, got EOF", .{});
+                std.debug.panic("expected an int value (>= -1) for --steps option, got EOF", .{});
             }
-
             args_index += 1;
-
-            STEPS = std.fmt.parseInt(u64, args[args_index], 10) catch |err| {
+            STEPS = std.fmt.parseInt(i64, args[args_index], 10) catch |err| {
                 usage(args[0]);
-                std.debug.panic("expected a unsigned int value for --steps option, got '{s}': {}", .{ args[args_index], err });
+                std.debug.panic("expected an int value (>= -1) for --steps option, got '{s}': {}", .{ args[args_index], err });
             };
+            if (STEPS < -1) {
+                usage(args[0]);
+                std.debug.panic("expected an int value (>= -1) for --steps option, got '{s}'", .{args[args_index]});
+            }
         } else if (std.mem.eql(u8, args[args_index], "--delay")) {
             if (args.len == args_index) {
                 usage(args[0]);
                 std.debug.panic("expected an int value for --delay option, got EOF", .{});
             }
-
             args_index += 1;
-
             DELAY = std.fmt.parseInt(i64, args[args_index], 10) catch |err| {
                 usage(args[0]);
-                std.debug.panic("expected a int value for --delay option, got '{s}': {}", .{ args[args_index], err });
+                std.debug.panic("expected an int value for --delay option, got '{s}': {}", .{ args[args_index], err });
             };
         } else if (std.mem.eql(u8, args[args_index], "--alive-cell")) {
             if (args.len == args_index) {
@@ -238,10 +238,11 @@ pub fn main(init: std.process.Init) !void {
     field.set(12, 8, true);
     field.set(13, 8, true);
 
-    for (0..STEPS) |_| {
+    while (STEPS != 0) {
         field.clearScreen();
         try field.print(init, ALIVE_CHAR, DEAD_CHAR);
         field.next();
         try init.io.sleep(.fromMilliseconds(DELAY), .awake);
+        STEPS -= 1;
     }
 }
